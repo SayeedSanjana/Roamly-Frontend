@@ -1,7 +1,7 @@
 <template>
   <!-- Navigation Bar -->
   <nav
-    class="bg-gray-100 shadow-lg font-semibold border-b border-opacity-30 border-gray-300"
+    class="bg-pink-50 shadow-lg font-semibold border-b border-opacity-30 border-gray-400"
   >
     <div
       class="container mx-auto p-4 md:p-6 flex justify-between md:justify-around lg:justify-around"
@@ -34,18 +34,18 @@
         class="space-y-2 md:space-y-0 md:flex md:flex-row md:space-x-6 md:w-full md:justify-center"
       >
         <router-link
-          to="/"
-          class="text-gray-500 flex items-center text-base font-light"
+          to="/dashboard"
+          class="text-gray-700 flex items-center text-base font-light"
           :class="{
             'underline decoration-2 text-gray-500  underline-offset-8':
               isActiveRoute('/dashboard'),
           }"
         >
-          <span class="ml-2">Home</span>
+          <span class="ml-2">Dashboard</span>
         </router-link>
         <router-link
           to="/onboard"
-          class="text-gray-500 flex items-center text-base font-light"
+          class="text-gray-700 flex items-center text-base font-light"
           :class="{
             'underline decoration-2 text-gray-500  underline-offset-8':
               isActiveRoute('/onboard'),
