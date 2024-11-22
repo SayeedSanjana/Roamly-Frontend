@@ -3,7 +3,7 @@
     <Header />
     <Navigation />
     <div
-      class="bg-gray-100 text-gray-600 flex items-center justify-center min-h-screen relative"
+      class="bg-gray-100 text-gray-600 flex items-center justify-center min-h-screen relative py-8"
     >
       <!-- Background Image -->
       <div

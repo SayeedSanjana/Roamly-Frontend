@@ -1,7 +1,7 @@
 <template>
   <!-- Navigation Bar -->
   <nav
-    class="bg-pink-50 shadow-lg font-semibold border-b border-opacity-30 border-gray-400"
+    class="bg-orange-100 shadow-lg font-semibold border-b border-opacity-30 border-gray-400"
   >
     <div
       class="container mx-auto p-4 md:p-6 flex justify-between md:justify-around lg:justify-around"
@@ -41,7 +41,7 @@
               isActiveRoute('/dashboard'),
           }"
         >
-          <span class="ml-2">Dashboard</span>
+          <span class="ml-2 font-medium">Dashboard</span>
         </router-link>
         <router-link
           to="/onboard"
@@ -51,7 +51,7 @@
               isActiveRoute('/onboard'),
           }"
         >
-          <span class="ml-2">User Preferences</span>
+          <span class="ml-2 font-medium">User Preferences</span>
         </router-link>
         <!-- <router-link
           to="/dashboard"
