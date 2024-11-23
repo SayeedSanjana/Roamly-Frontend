@@ -27,31 +27,6 @@
       <section class="py-6 container mx-auto">
         <div class="flex flex-wrap gap-6">
           <!-- User Profile -->
-          <!-- <div
-            class="bg-white shadow-lg rounded-xl w-72 h-72 flex flex-col border border-gray-200"
-          >
-            <div
-              class="w-full py-4 px-4 border-b border-orange-200 rounded-t-xl"
-            >
-              <h2 class="text-xl font-semibold">User Profile</h2>
-            </div>
-            <div class="flex-grow p-4">
-              <p id="user-preferences" class="mt-2">Name:</p>
-              <p id="user-preferences" class="mt-2">Email:</p>
-              <p id="user-preferences" class="mt-2">Preferred Meal Time:</p>
-              <p id="user-preferences" class="mt-2">Preferred Activities:</p>
-            </div>
-            <div class="w-full py-4 px-4 flex justify-center rounded-b-xl">
-              <router-link
-                id="edit-preferences"
-                to="/onboard"
-                class="bg-rose-400 hover:bg-rose-500 text-white text-sm font-semibold py-2 px-4 rounded"
-              >
-                Edit Preferences
-              </router-link>
-            </div>
-          </div> -->
-          <!-- User Profile -->
           <div
             class="bg-white shadow-lg rounded-xl w-72 h-72 flex flex-col border border-gray-200"
           >
@@ -226,6 +201,90 @@
           </div>
         </div>
       </section>
+      <div class="py-6 container mx-auto space-y-6">
+        <!-- Visited Place -->
+        <section
+          id="visited_places"
+          class="bg-white p-4 rounded-lg shadow space-y-6 mt-4 pt-8"
+        >
+          <h2 class="text-xl font-semibold">Visited Places</h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div
+              v-for="item in paginatedVisitedPlaces"
+              :key="item._id"
+              class="bg-white shadow rounded-lg p-4 flex flex-col justify-between border border-gray-200"
+              data-id="${item._id}"
+            >
+              <div>
+                <div class="text-lg font-bold text-gray-600 mb-2">
+                  {{ item.name }}
+                </div>
+
+                <p class="text-sm text-gray-500">
+                  <span class="font-semibold">Address:</span>
+                  {{ item.address }} km
+                </p>
+                <p class="text-sm text-gray-500">
+                  <span class="font-semibold">Category:</span>
+                  {{ item.category }}
+                </p>
+                <div v-if="item.rating > 0" class="flex items-center space-x-2">
+                  <span class="text-yellow-500 font-semibold text-medium">{{
+                    item.rating
+                  }}</span>
+                  <img
+                    src="../assets/svgs/star.svg"
+                    class="w-5 h-5"
+                    alt="review"
+                  />
+                </div>
+                <div class="mt-2 flex space-x-2">
+                  <button
+                    id="drop-by-btn"
+                    class="text-orange-500 lg:hover:text-orange-600 text-sm font-semibold px-4 rounded w-full flex"
+                    data-id="${item._id}"
+                    data-index="${index}"
+                  >
+                    <img
+                      src="../assets/svgs/dropby.svg"
+                      class="w-5 h-5 mr-2"
+                      alt="dropby"
+                    />
+                    Drop by
+                  </button>
+                  <button
+                    class="see-more-btn text-slate-500 hover:text-slate-600 text-sm font-semibold py-2 px-4 rounded w-full hover:underline"
+                  >
+                    Rate Now
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div class="flex justify-center items-center space-x-2 mt-4">
+            <button
+              @click="changePage('visitedPlaces', false)"
+              :disabled="visitedPage === 1"
+              class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span class="page-indicator text-gray-700"
+              >Page {{ visitedPage }}</span
+            >
+            <button
+              @click="changePage('visitedPlaces', true)"
+              :disabled="visitedPage === totalVisitedPages"
+              class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded"
+            >
+              Next
+            </button>
+          </div>
+        </section>
+      </div>
 
       <div v-if="loading" class="flex justify-center items-center mr-4 mt-4">
         <img
@@ -238,13 +297,12 @@
         </p>
       </div>
 
-      <!-- Main Content -->
       <!-- Recommendations Section -->
       <div v-else class="py-6 container mx-auto space-y-6">
         <!-- Personalized Recommendations -->
         <section
           id="personalized-recommendations"
-          class="bg-white p-4 rounded-lg shadow space-y-6"
+          class="bg-white p-4 rounded-lg shadow space-y-6 pt-8"
         >
           <h2 class="text-xl font-semibold">Personalized Recommendations</h2>
           <p
@@ -257,10 +315,9 @@
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div
-              v-for="item in paginatedPersonalizedRecommendations"
-              :key="item._id"
+              v-for="(item, index) in paginatedPersonalizedRecommendations"
+              :key="index"
               class="bg-white shadow rounded-lg p-4 flex flex-col justify-between border border-gray-200"
-              data-id="${item._id}"
             >
               <div>
                 <div class="text-lg font-bold text-gray-600 mb-2">
@@ -271,8 +328,7 @@
                 </div>
                 {{ cuisine }}
                 <p class="text-sm text-gray-500">
-                  <span class="font-semibold">Address:</span>
-                  {{ item.address }} km
+                  <span class="font-semibold">Address:</span> {{ item.address }}
                 </p>
                 <p class="text-sm text-gray-500">
                   <span class="font-semibold">Distance:</span>
@@ -313,10 +369,83 @@
                   Drop by
                 </button>
                 <button
-                  class="see-more-btn text-slate-500 hover:text-slate-600 text-sm font-semibold py-2 px-4 rounded w-full"
+                  @click="openTransportationModal(item)"
+                  class="see-more-btn text-slate-500 hover:text-slate-600 text-sm font-semibold py-2 px-4 rounded w-full hover:underline"
                 >
-                  See more...
+                  Transport Options
                 </button>
+              </div>
+            </div>
+
+            <!-- Modal for Transportation -->
+            <div
+              v-if="selectedItem"
+              class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+            >
+              <div
+                class="bg-white w-11/12 md:w-2/3 lg:w-1/2 rounded-lg p-6 shadow-lg relative"
+              >
+                <!-- Close Button -->
+                <button
+                  @click="closeTransportationModal"
+                  class="absolute top-4 right-4 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center"
+                >
+                  &times;
+                </button>
+                <h2 class="text-2xl font-semibold mb-4">
+                  Recommended Transportations for
+                  <span class="text-orange-500">{{ selectedItem.name }}</span>
+                </h2>
+
+                <div
+                  v-if="paginatedTransportations.length > 0"
+                  class="space-y-4"
+                >
+                  <div
+                    v-for="(transportation, tIndex) in paginatedTransportations"
+                    :key="tIndex"
+                    class="border border-gray-300 rounded-lg p-4"
+                  >
+                    <h3 class="text-lg font-bold">{{ transportation.name }}</h3>
+                    <p>
+                      <strong>Address:</strong> {{ transportation.address }}
+                    </p>
+                    <p>
+                      <strong>Category:</strong> {{ transportation.category }}
+                    </p>
+                    <p>
+                      <strong>Distance:</strong>
+                      {{ transportation.distance }} km
+                    </p>
+                  </div>
+                </div>
+                <p v-else class="text-gray-500">
+                  No transportation recommendations available.
+                </p>
+
+                <!-- Pagination Controls -->
+                <div
+                  v-if="totalTransportationPages > 1"
+                  class="flex justify-center items-center space-x-4 mt-4"
+                >
+                  <button
+                    @click="changeTransportationPage(false)"
+                    :disabled="transportationPage === 1"
+                    class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span class="text-gray-700"
+                    >Page {{ transportationPage }}</span
+                  >
+                  <button
+                    @click="changeTransportationPage(true)"
+                    :disabled="transportationPage === totalTransportationPages"
+                    class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -346,7 +475,7 @@
         <!-- Popular Recommendations -->
         <section
           id="popular-recommendations"
-          class="bg-white p-4 rounded-lg shadow space-y-6"
+          class="bg-white p-4 rounded-lg shadow space-y-6 pt-8"
         >
           <h2 class="text-xl font-semibold">Popular Recommendations</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -407,10 +536,92 @@
                   Drop by
                 </button>
                 <button
-                  class="see-more-btn text-slate-500 hover:text-slate-600 text-sm font-semibold py-2 px-4 rounded w-full"
+                  @click="popenTransportationModal(item)"
+                  class="see-more-btn text-slate-500 hover:text-slate-600 text-sm font-semibold py-2 px-4 rounded w-full hover:underline"
                 >
-                  See more...
+                  Transport Options
                 </button>
+
+                <!-- Modal for Transportation -->
+                <div
+                  v-if="pselectedItem"
+                  class="fixed inset-0 bg-gray-900 bg-opacity-25 flex justify-center items-center z-50"
+                >
+                  <div
+                    class="bg-white w-11/12 md:w-2/3 lg:w-1/2 rounded-lg p-6 shadow-lg relative"
+                  >
+                    <!-- Close Button -->
+                    <button
+                      @click="pcloseTransportationModal"
+                      class="absolute top-4 right-4 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center"
+                    >
+                      &times;
+                    </button>
+                    <h2 class="text-2xl font-semibold mb-4">
+                      Recommended Transportations for
+                      <span class="text-orange-500">{{
+                        pselectedItem.name
+                      }}</span>
+                    </h2>
+
+                    <div
+                      v-if="ppaginatedTransportations.length > 0"
+                      class="space-y-4"
+                    >
+                      <div
+                        v-for="(
+                          transportation, tIndex
+                        ) in ppaginatedTransportations"
+                        :key="tIndex"
+                        class="border border-gray-300 rounded-lg p-4"
+                      >
+                        <h3 class="text-lg font-bold">
+                          {{ transportation.name }}
+                        </h3>
+                        <p>
+                          <strong>Address:</strong> {{ transportation.address }}
+                        </p>
+                        <p>
+                          <strong>Category:</strong>
+                          {{ transportation.category }}
+                        </p>
+                        <p>
+                          <strong>Distance:</strong>
+                          {{ transportation.distance }} km
+                        </p>
+                      </div>
+                    </div>
+                    <p v-else class="text-gray-500">
+                      No transportation recommendations available.
+                    </p>
+
+                    <!-- Pagination Controls -->
+                    <div
+                      v-if="ptotalTransportationPages > 1"
+                      class="flex justify-center items-center space-x-4 mt-4"
+                    >
+                      <button
+                        @click="pchangeTransportationPage(false)"
+                        :disabled="transportationPage === 1"
+                        class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      <span class="text-gray-700"
+                        >Page {{ ptransportationPage }}</span
+                      >
+                      <button
+                        @click="pchangeTransportationPage(true)"
+                        :disabled="
+                          transportationPage === totalTransportationPages
+                        "
+                        class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -452,6 +663,15 @@ export default {
   },
   data() {
     return {
+      selectedItem: null,
+      transportationPage: 1, // Current page of transportation
+      transportationsPerPage: 4, // Items per page for transportation modal
+      pselectedItem: null,
+      ptransportationPage: 1, // Current page of transportation
+      ptransportationsPerPage: 4, // Items per page for transportation modal
+      transportation: [],
+      isModalOpenPer: false,
+      pisModalOpenPer: false,
       personalizedRecommendations: [],
       popularRecommendations: [],
       location: null,
@@ -459,12 +679,14 @@ export default {
       time: null,
       personalizedPage: 1,
       popularPage: 1,
+      visitedPage: 1,
       itemsPerPage: 4,
       preferences: {
         cuisines: [],
         indoor_activities: [],
         outdoor_activities: [],
         preferred_meal_time: [],
+        visited_places: [],
       },
       userPreferences: "Loading user preferences...",
       userName: "",
@@ -567,10 +789,40 @@ export default {
   //   await this.fetchRecommendations();
   // },
   computed: {
+    paginatedTransportations() {
+      if (!this.selectedItem || !this.selectedItem.transportation) return [];
+      const start = (this.transportationPage - 1) * this.transportationsPerPage;
+      const end = start + this.transportationsPerPage;
+      return this.selectedItem.transportation.slice(start, end);
+    },
+    totalTransportationPages() {
+      if (!this.selectedItem || !this.selectedItem.transportation) return 0;
+      return Math.ceil(
+        this.selectedItem.transportation.length / this.transportationsPerPage
+      );
+    },
+    ppaginatedTransportations() {
+      if (!this.pselectedItem || !this.pselectedItem.transportation) return [];
+      const start =
+        (this.ptransportationPage - 1) * this.ptransportationsPerPage;
+      const end = start + this.ptransportationsPerPage;
+      return this.pselectedItem.transportation.slice(start, end);
+    },
+    ptotalTransportationPages() {
+      if (!this.pselectedItem || !this.pselectedItem.transportation) return 0;
+      return Math.ceil(
+        this.pselectedItem.transportation.length / this.ptransportationsPerPage
+      );
+    },
     paginatedPersonalizedRecommendations() {
       const start = (this.personalizedPage - 1) * this.itemsPerPage;
       const end = start + this.itemsPerPage;
       return this.personalizedRecommendations.slice(start, end);
+    },
+    paginatedVisitedPlaces() {
+      const start = (this.visitedPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.preferences.visited_places.slice(start, end);
     },
     paginatedPopularRecommendations() {
       const start = (this.popularPage - 1) * this.itemsPerPage;
@@ -584,6 +836,11 @@ export default {
     },
     totalPopularPages() {
       return Math.ceil(this.popularRecommendations.length / this.itemsPerPage);
+    },
+    totalVisitedPages() {
+      return Math.ceil(
+        this.preferences.visited_places.length / this.itemsPerPage
+      );
     },
     greeting() {
       this.userName = this.getUsernameFromJWT();
@@ -612,8 +869,37 @@ export default {
     },
   },
   methods: {
-    // async getUserLocation() {
-    //   return new Promise((resolve, reject) => {
+    openTransportationModal(item) {
+      this.selectedItem = item; // Set the selected item
+      this.transportationPage = 1; // Reset pagination
+    },
+    popenTransportationModal(item) {
+      this.pselectedItem = item; // Set the selected item
+      this.ptransportationPage = 1; // Reset pagination
+    },
+    closeTransportationModal() {
+      this.selectedItem = null; // Clear the selected item
+    },
+    pcloseTransportationModal() {
+      this.pselectedItem = null; // Clear the selected item
+    },
+    changeTransportationPage(forward) {
+      if (forward && this.transportationPage < this.totalTransportationPages) {
+        this.transportationPage++;
+      } else if (!forward && this.transportationPage > 1) {
+        this.transportationPage--;
+      }
+    },
+    pchangeTransportationPage(forward) {
+      if (
+        forward &&
+        this.ptransportationPage < this.ptotalTransportationPages
+      ) {
+        this.ptransportationPage++;
+      } else if (!forward && this.ptransportationPage > 1) {
+        this.ptransportationPage--;
+      }
+    },
     //     if (navigator.geolocation) {
     //       navigator.geolocation.getCurrentPosition(
     //         (position) => {
@@ -661,6 +947,7 @@ export default {
           indoor_activities: data.indoor_activities || [],
           outdoor_activities: data.outdoor_activities || [],
           preferred_meal_time: data.preferred_meal_time || [],
+          visited_places: data.visited_places || [],
         };
       } catch (error) {
         console.error("Error fetching user preferences:", error);
@@ -725,55 +1012,6 @@ export default {
         year: "numeric",
       });
     },
-    // async fetchWeather() {
-    //   try {
-    //     const apiKey = "74877bd7268a9dd52cda3ae7cf3dc300";
-    //     const location = await this.getUserLocation();
-    //     const res = await fetch(
-    //       `https://api.openweathermap.org/data/2.5/weather?lat=${location.lat}&lon=${location.lon}&appid=${apiKey}&units=metric`
-    //     );
-    //     const data = await res.json();
-    //     console.log("Weather API Response:", data);
-
-    //     const condition = data.weather[0].main;
-    //     console.log("Weather condition:", condition);
-
-    //     const currentTime = Math.floor(Date.now() / 1000);
-    //     const isDaytime =
-    //       currentTime >= data.sys.sunrise && currentTime < data.sys.sunset;
-
-    //     const gifUrl =
-    //       (this.weatherGifMap[condition] &&
-    //         this.weatherGifMap[condition][isDaytime ? "day" : "night"]) ||
-    //       this.weatherGifMap.Default[isDaytime ? "day" : "night"] ||
-    //       "../public/icons/default.gif";
-
-    //     this.weather = {
-    //       cityName: data.name,
-    //       condition,
-    //       temperature: Math.round(data.main.temp),
-    //       gifUrl,
-    //     };
-    //   } catch (error) {
-    //     console.error("Error fetching weather:", error);
-    //     this.weather = {
-    //       cityName: "Unknown",
-    //       condition: "N/A",
-    //       temperature: "--",
-    //       gifUrl: "../public/icons/default.gif",
-    //     };
-    //   }
-    // },
-
-    // async getUserLocation() {
-    //   return new Promise((resolve, reject) => {
-    //     navigator.geolocation.getCurrentPosition(
-    //       (pos) =>
-    //         resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-    //       (error) => reject(new Error("Unable to fetch location"))
-    //     );
-    //   });
-    // },
 
     //----------------------------------------------------------------------------------------------------------------------//
     async fetchWeather() {
@@ -836,9 +1074,9 @@ export default {
     //----------------------------------------------------------------------------------------------------------------------//
     async fetchRecommendations() {
       const token = localStorage.getItem("token");
-      console.log("APIlOAD: " + this.apiPayload.location);
-      console.log("APIlOAD: " + this.apiPayload.time);
-      console.log("APIlOAD: " + this.apiPayload.weather);
+      // console.log("APIlOAD: " + this.apiPayload.location);
+      // console.log("APIlOAD: " + this.apiPayload.time);
+      // console.log("APIlOAD: " + this.apiPayload.weather);
 
       if (!token) {
         console.warn("JWT not found in localStorage.");
@@ -884,6 +1122,12 @@ export default {
           this.popularPage++;
         } else if (!direction && this.popularPage > 1) {
           this.popularPage--;
+        }
+      } else if (type === "visitedPlaces") {
+        if (direction && this.visitedPage < this.totalVisitedPages) {
+          this.visitedPage++;
+        } else if (!direction && this.visitedPage > 1) {
+          this.visitedPage--;
         }
       }
     },
