@@ -254,6 +254,7 @@
                     Drop by
                   </button>
                   <button
+                    @click="openRatingModal(item)"
                     class="see-more-btn text-slate-500 hover:text-slate-600 text-sm font-semibold py-2 px-4 rounded w-full hover:underline"
                   >
                     Rate Now
@@ -284,6 +285,55 @@
             </button>
           </div>
         </section>
+
+        <!-- Rating Modal -->
+        <div
+          v-if="selectedPlace"
+          class="fixed inset-0 bg-gray-900 bg-opacity-25 flex justify-center items-center z-50"
+        >
+          <div
+            class="bg-white w-11/12 md:w-2/3 lg:w-1/3 rounded-lg p-6 shadow-lg relative"
+          >
+            <button
+              @click="closeRatingModal"
+              class="absolute top-4 right-4 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center"
+            >
+              &times;
+            </button>
+            <h2 class="text-base font-semibold mb-4">
+              Rate
+              <span class="text-orange-500 text-base">{{
+                selectedPlace.name
+              }}</span>
+            </h2>
+            <div class="flex justify-center items-center space-x-2 mb-4">
+              <img
+                v-for="index in 5"
+                :key="index"
+                :src="
+                  index <= currentRating
+                    ? '../../public/img/star-filled.png'
+                    : '../../public/img/star.png'
+                "
+                class="w-8 h-8 cursor-pointer"
+                alt="star"
+                @click="setRating(index)"
+              />
+            </div>
+            <p class="text-center text-gray-500 mb-4">
+              You selected
+              <span class="font-bold">{{ currentRating }}</span> star(s).
+            </p>
+            <div class="flex justify-center">
+              <button
+                @click="submitRating"
+                class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-6 rounded"
+              >
+                Submit Rating
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-if="loading" class="flex justify-center items-center mr-4 mt-4">
@@ -663,6 +713,8 @@ export default {
   },
   data() {
     return {
+      selectedPlace: null, // Holds the place the user is rating
+      currentRating: 0, // Tracks the current star rating
       selectedItem: null,
       transportationPage: 1, // Current page of transportation
       transportationsPerPage: 4, // Items per page for transportation modal
@@ -869,20 +921,29 @@ export default {
     },
   },
   methods: {
+    //----------------------------------------------------------------------
     openTransportationModal(item) {
       this.selectedItem = item; // Set the selected item
       this.transportationPage = 1; // Reset pagination
     },
+
+    //----------------------------------------------------------------------
     popenTransportationModal(item) {
       this.pselectedItem = item; // Set the selected item
       this.ptransportationPage = 1; // Reset pagination
     },
+
+    //---------------------------------------------------------------------
     closeTransportationModal() {
       this.selectedItem = null; // Clear the selected item
     },
+
+    //----------------------------------------------------------------------
     pcloseTransportationModal() {
       this.pselectedItem = null; // Clear the selected item
     },
+
+    //----------------------------------------------------------------------
     changeTransportationPage(forward) {
       if (forward && this.transportationPage < this.totalTransportationPages) {
         this.transportationPage++;
@@ -890,6 +951,8 @@ export default {
         this.transportationPage--;
       }
     },
+
+    //----------------------------------------------------------------------------
     pchangeTransportationPage(forward) {
       if (
         forward &&
@@ -899,6 +962,66 @@ export default {
       } else if (!forward && this.ptransportationPage > 1) {
         this.ptransportationPage--;
       }
+    },
+
+    //----------------------------------------------------------------------------------------
+    openRatingModal(place) {
+      this.selectedPlace = place;
+      this.currentRating = place.rating || 0; // Default to existing rating if available
+    },
+
+    //-------------------------------------------------------------------------------------------------
+    closeRatingModal() {
+      this.selectedPlace = null;
+      this.currentRating = 0;
+    },
+
+    //------------------------------------------------------------------------------------------------
+    async submitRating() {
+      if (this.selectedPlace) {
+        const token = localStorage.getItem("token");
+        const payload = {
+          unique_id: this.selectedPlace.unique_id,
+          rating: this.currentRating,
+        };
+
+        try {
+          // API call to submit rating
+          const response = await axios.post(
+            "http://127.0.0.1:5000/user/rate_place",
+            payload,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          console.log("Rating submitted successfully:", response.data);
+
+          // Update the local data to reflect the new rating
+          this.selectedPlace.rating = this.currentRating;
+
+          // Optionally, update the overall rating in the visited places list
+          const placeIndex = this.paginatedVisitedPlaces.findIndex(
+            (place) => place._id === this.selectedPlace._id
+          );
+          if (placeIndex !== -1) {
+            this.paginatedVisitedPlaces[placeIndex].rating = this.currentRating;
+          }
+
+          // Close the modal
+          this.closeRatingModal();
+        } catch (error) {
+          console.error("Error submitting rating:", error);
+        }
+      }
+    },
+
+    //-----------------------------------------------------------------------------------------------------------
+    setRating(stars) {
+      this.currentRating = stars; // Update the current rating
     },
     //     if (navigator.geolocation) {
     //       navigator.geolocation.getCurrentPosition(
