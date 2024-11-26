@@ -53,16 +53,16 @@
         >
           <span class="ml-2 font-medium">User Preferences</span>
         </router-link>
-        <!-- <router-link
-          to="/dashboard"
+        <router-link
+          to="/test"
           class="text-gray-500 flex items-center text-base font-light"
           :class="{
             'underline decoration-2 text-gray-500 underline-offset-8':
-              isActiveRoute('/dashboard'),
+              isActiveRoute('/test'),
           }"
         >
-          <span class="ml-2">Dashboard</span>
-        </router-link> -->
+          <span class="ml-2">Recommendation Tester</span>
+        </router-link>
       </div>
     </div>
   </nav>
