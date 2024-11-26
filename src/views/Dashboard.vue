@@ -208,6 +208,12 @@
           class="bg-white p-4 rounded-lg shadow space-y-6 mt-4 pt-8"
         >
           <h2 class="text-xl font-semibold">Visited Places</h2>
+          <div
+            v-if="paginatedVisitedPlaces.length <= 0"
+            class="text-gray-500 text-base"
+          >
+            No visited places yet
+          </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div
@@ -376,7 +382,12 @@
                     >({{ item.type }})</span
                   >
                 </div>
-                {{ cuisine }}
+                <div
+                  v-if="(item.type = 'restaurant')"
+                  class="nline-block bg-pink-100 text-pink-800 text-sm font-medium px-3 py-1 rounded-full m-1"
+                >
+                  {{ item.cuisine_type }}
+                </div>
                 <p class="text-sm text-gray-500">
                   <span class="font-semibold">Address:</span> {{ item.address }}
                 </p>
@@ -542,7 +553,12 @@
                     >({{ item.type }})</span
                   >
                 </div>
-                {{ cuisine }}
+                <div
+                  v-if="(item.type = 'restaurant')"
+                  class="nline-block bg-pink-100 text-pink-800 text-sm font-medium px-3 py-1 rounded-full m-1"
+                >
+                  {{ item.cuisine_type }}
+                </div>
                 <p class="text-sm text-gray-500">
                   <span class="font-semibold">Address:</span>
                   {{ item.address }} km

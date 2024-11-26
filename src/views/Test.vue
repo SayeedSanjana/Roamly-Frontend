@@ -19,11 +19,19 @@
                 class="block text-sm font-medium text-gray-700"
                 >Location</label
               >
-              <select id="location" class="mt-1 p-2 w-full border rounded">
-                <option value="downtown">Downtown Montreal</option>
-                <option value="old-montreal">Old Montreal</option>
-                <option value="plateau">Plateau Mont-Royal</option>
-                <option value="west-island">West Island</option>
+              <select
+                id="location"
+                class="mt-1 p-2 w-full border rounded"
+                v-model="selectedLocation"
+                @change="updateLocationCoordinates"
+              >
+                <option
+                  v-for="(loc, index) in locations"
+                  :key="index"
+                  :value="loc"
+                >
+                  {{ loc.name }}
+                </option>
               </select>
             </div>
 
@@ -33,6 +41,7 @@
                 >Time of Day</label
               >
               <input
+                v-model="time"
                 type="time"
                 id="time"
                 class="mt-1 p-2 w-full border rounded"
@@ -46,12 +55,17 @@
                 class="block text-sm font-medium text-gray-700"
                 >Weather</label
               >
-              <select id="weather" class="mt-1 p-2 w-full border rounded">
+              <select
+                id="weather"
+                class="mt-1 p-2 w-full border rounded"
+                v-model="weather"
+              >
                 <option value="clear">Clear</option>
                 <option value="rainy">Rainy</option>
                 <option value="snowy">Snowy</option>
-                <option value="hot">Sunny</option>
+                <option value="sunny">Sunny</option>
                 <option value="cold">Cold</option>
+                <option value="clouds">Clouds</option>
               </select>
             </div>
           </div>
@@ -61,9 +75,18 @@
         <section class="mb-10">
           <h2 class="text-xl font-semibold mb-3">Preferred Meal Times</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="border rounded bg-white shadow p-5">
-              <h3 class="text-lg font-semibold"></h3>
-              <p class="text-gray-700">meal time</p>
+            <span
+              class="text-gray-400 text-base"
+              v-if="preferences.preferred_meal_time.length <= 0"
+              >No outdoor preferred meal time yet yet</span
+            >
+            <div
+              class="border rounded bg-white shadow p-5"
+              v-for="item in preferences.preferred_meal_time"
+              :key="item"
+            >
+              <h3 class="text-lg font-semibold">{{ item.meal }}</h3>
+              <p class="text-gray-700">{{ item.time }}</p>
             </div>
           </div>
         </section>
@@ -73,8 +96,16 @@
           <h2 class="text-xl font-semibold mb-3">User Cuisines</h2>
           <div class="border rounded bg-white p-5">
             <span
+              class="text-gray-400 text-base"
+              v-if="preferences.cuisines.length <= 0"
+              >No cuisine preferences yet</span
+            >
+            <span
+              v-for="cuisine in preferences.cuisines"
+              :key="cuisine"
               class="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full m-1"
             >
+              {{ cuisine }}
             </span>
           </div>
         </section>
@@ -87,6 +118,11 @@
             <div>
               <h3 class="text-lg font-semibold mb-2">Indoor Activities</h3>
               <div class="border rounded bg-white p-5">
+                <span
+                  class="text-gray-400 text-base"
+                  v-if="preferences.indoor_activities.length <= 0"
+                  >No indoor activities preferences yet</span
+                >
                 <span
                   v-for="activity in preferences.indoor_activities"
                   :key="activity"
@@ -102,6 +138,11 @@
               <h3 class="text-lg font-semibold mb-2">Outdoor Activities</h3>
               <div class="border rounded bg-white p-5">
                 <span
+                  class="text-gray-400 text-base"
+                  v-if="preferences.outdoor_activities.length <= 0"
+                  >No outdoor activities preferences yet</span
+                >
+                <span
                   v-for="activity in preferences.outdoor_activities"
                   :key="activity"
                   class="inline-block bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full m-1"
@@ -115,20 +156,379 @@
 
         <!-- Results Section -->
         <section>
-          <h2 class="text-xl font-semibold mb-3">Generated Recommendations</h2>
-          <div class="p-5 bg-white border rounded shadow">
-            <!-- <div v-if="recommendations.length === 0" class="text-gray-500">
-            No recommendations yet. Adjust inputs and click the "Generate"
-            button below.
-          </div> -->
-            <div class="mb-3 p-3 border rounded">
-              <h3 class="font-bold"></h3>
-              <p></p>
+          <section
+            id="personalized-recommendations"
+            class="bg-white p-4 rounded-lg shadow space-y-6 pt-8"
+          >
+            <h2 class="text-xl font-semibold">Personalized Recommendations</h2>
+            <p
+              class="text-base text-gray-400"
+              v-if="paginatedPersonalizedRecommendations <= 0"
+            >
+              No personalized recommendation yet!
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div
+                v-for="(item, index) in paginatedPersonalizedRecommendations"
+                :key="index"
+                class="bg-white shadow rounded-lg p-4 flex flex-col justify-between border border-gray-200"
+              >
+                <div>
+                  <div class="text-lg font-bold text-gray-600 mb-2">
+                    {{ item.name }}
+                    <span class="text-gray-400 font-normal text-sm"
+                      >({{ item.type }})</span
+                    >
+                  </div>
+                  <div
+                    v-if="(item.type = 'restaurant')"
+                    class="nline-block bg-pink-100 text-pink-800 text-sm font-medium px-3 py-1 rounded-full m-1"
+                  >
+                    {{ item.cuisine_type }}
+                  </div>
+                  <p class="text-sm text-gray-500">
+                    <span class="font-semibold">Address:</span>
+                    {{ item.address }}
+                  </p>
+                  <p class="text-sm text-gray-500">
+                    <span class="font-semibold">Distance:</span>
+                    {{ item.distance }} km
+                  </p>
+                  <div class="flex items-center space-x-2">
+                    <!-- <span class="font-semibold text-sm text-gray-500"
+                    >Rating:
+                  </span> -->
+
+                    <span class="text-yellow-500 font-semibold text-medium">{{
+                      item.rating
+                    }}</span>
+                    <img
+                      src="../assets/svgs/star.svg"
+                      class="w-5 h-5"
+                      alt="review"
+                    />
+                    <span
+                      v-if="item.review_count > 0"
+                      class="text-sm text-gray-600"
+                      >({{ item.review_count }} reviews)</span
+                    >
+                  </div>
+                </div>
+                <div class="mt-2 flex space-x-2">
+                  <button
+                    id="drop-by-btn"
+                    class="text-orange-500 lg:hover:text-orange-600 text-sm font-semibold px-4 rounded w-full flex"
+                    data-id="${item._id}"
+                    data-index="${index}"
+                  >
+                    <img
+                      src="../assets/svgs/dropby.svg"
+                      class="w-5 h-5 mr-2"
+                      alt="dropby"
+                    />
+                    Drop by
+                  </button>
+                  <button
+                    @click="openTransportationModal(item)"
+                    class="see-more-btn text-slate-500 hover:text-slate-600 text-sm font-semibold py-2 px-4 rounded w-full hover:underline"
+                  >
+                    Transport Options
+                  </button>
+                </div>
+              </div>
+
+              <!-- Modal for Transportation -->
+              <div
+                v-if="selectedItem"
+                class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+              >
+                <div
+                  class="bg-white w-11/12 md:w-2/3 lg:w-1/2 rounded-lg p-6 shadow-lg relative"
+                >
+                  <!-- Close Button -->
+                  <button
+                    @click="closeTransportationModal"
+                    class="absolute top-4 right-4 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center"
+                  >
+                    &times;
+                  </button>
+                  <h2 class="text-2xl font-semibold mb-4">
+                    Recommended Transportations for
+                    <span class="text-orange-500">{{ selectedItem.name }}</span>
+                  </h2>
+
+                  <div
+                    v-if="paginatedTransportations.length > 0"
+                    class="space-y-4"
+                  >
+                    <div
+                      v-for="(
+                        transportation, tIndex
+                      ) in paginatedTransportations"
+                      :key="tIndex"
+                      class="border border-gray-300 rounded-lg p-4"
+                    >
+                      <h3 class="text-lg font-bold">
+                        {{ transportation.name }}
+                      </h3>
+                      <p>
+                        <strong>Address:</strong> {{ transportation.address }}
+                      </p>
+                      <p>
+                        <strong>Category:</strong> {{ transportation.category }}
+                      </p>
+                      <p>
+                        <strong>Distance:</strong>
+                        {{ transportation.distance }} km
+                      </p>
+                    </div>
+                  </div>
+                  <p v-else class="text-gray-500">
+                    No transportation recommendations available.
+                  </p>
+
+                  <!-- Pagination Controls -->
+                  <div
+                    v-if="totalTransportationPages > 1"
+                    class="flex justify-center items-center space-x-4 mt-4"
+                  >
+                    <button
+                      @click="changeTransportationPage(false)"
+                      :disabled="transportationPage === 1"
+                      class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+                    <span class="text-gray-700"
+                      >Page {{ transportationPage }}</span
+                    >
+                    <button
+                      @click="changeTransportationPage(true)"
+                      :disabled="
+                        transportationPage === totalTransportationPages
+                      "
+                      class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+
+            <!-- Pagination Controls -->
+            <div class="flex justify-center items-center space-x-2 mt-4">
+              <button
+                @click="changePage('personalized', false)"
+                :disabled="personalizedPage === 1"
+                class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span class="page-indicator text-gray-700"
+                >Page {{ personalizedPage }}</span
+              >
+              <button
+                @click="changePage('personalized', true)"
+                :disabled="personalizedPage === totalPersonalizedPages"
+                class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded"
+              >
+                Next
+              </button>
+            </div>
+          </section>
+
+          <!-- Popular Recommendations -->
+          <section
+            id="popular-recommendations"
+            class="bg-white p-4 rounded-lg shadow space-y-6 pt-8"
+          >
+            <h2 class="text-xl font-semibold">Popular Recommendations</h2>
+            <p
+              class="text-base text-gray-400"
+              v-if="paginatedPersonalizedRecommendations <= 0"
+            >
+              No popular recommendation yet!
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div
+                v-for="item in paginatedPopularRecommendations"
+                :key="item._id"
+                class="bg-white shadow rounded-lg p-4 flex flex-col justify-between border border-gray-200"
+                data-id="${item._id}"
+              >
+                <div>
+                  <div class="text-lg font-bold text-gray-600 mb-2">
+                    {{ item.name }}
+                    <span class="text-gray-400 font-normal text-sm"
+                      >({{ item.type }})</span
+                    >
+                  </div>
+                  <div
+                    v-if="(item.type = 'restaurant')"
+                    class="nline-block bg-pink-100 text-pink-800 text-sm font-medium px-3 py-1 rounded-full m-1"
+                  >
+                    {{ item.cuisine_type }}
+                  </div>
+                  <p class="text-sm text-gray-500">
+                    <span class="font-semibold">Address:</span>
+                    {{ item.address }} km
+                  </p>
+                  <p class="text-sm text-gray-500">
+                    <span class="font-semibold">Distance:</span>
+                    {{ item.distance }} km
+                  </p>
+                  <div class="flex items-center space-x-2">
+                    <!-- <span class="font-semibold text-sm text-gray-500"
+                    >Rating:
+                  </span> -->
+
+                    <span class="text-yellow-500 font-semibold text-medium">{{
+                      item.rating
+                    }}</span>
+                    <img
+                      src="../assets/svgs/star.svg"
+                      class="w-5 h-5"
+                      alt="review"
+                    />
+                    <span
+                      v-if="item.review_count > 0"
+                      class="text-sm text-gray-600"
+                      >({{ item.review_count }} reviews)</span
+                    >
+                  </div>
+                </div>
+                <div class="mt-2 flex space-x-2">
+                  <button
+                    id="drop-by-btn"
+                    class="text-orange-500 lg:hover:text-orange-600 text-sm font-semibold px-4 rounded w-full flex"
+                    data-id="${item._id}"
+                    data-index="${index}"
+                  >
+                    <img
+                      src="../assets/svgs/dropby.svg"
+                      class="w-5 h-5 mr-2"
+                      alt="dropby"
+                    />
+                    Drop by
+                  </button>
+                  <button
+                    @click="popenTransportationModal(item)"
+                    class="see-more-btn text-slate-500 hover:text-slate-600 text-sm font-semibold py-2 px-4 rounded w-full hover:underline"
+                  >
+                    Transport Options
+                  </button>
+
+                  <!-- Modal for Transportation -->
+                  <div
+                    v-if="pselectedItem"
+                    class="fixed inset-0 bg-gray-900 bg-opacity-25 flex justify-center items-center z-50"
+                  >
+                    <div
+                      class="bg-white w-11/12 md:w-2/3 lg:w-1/2 rounded-lg p-6 shadow-lg relative"
+                    >
+                      <!-- Close Button -->
+                      <button
+                        @click="pcloseTransportationModal"
+                        class="absolute top-4 right-4 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center"
+                      >
+                        &times;
+                      </button>
+                      <h2 class="text-2xl font-semibold mb-4">
+                        Recommended Transportations for
+                        <span class="text-orange-500">{{
+                          pselectedItem.name
+                        }}</span>
+                      </h2>
+
+                      <div
+                        v-if="ppaginatedTransportations.length > 0"
+                        class="space-y-4"
+                      >
+                        <div
+                          v-for="(
+                            transportation, tIndex
+                          ) in ppaginatedTransportations"
+                          :key="tIndex"
+                          class="border border-gray-300 rounded-lg p-4"
+                        >
+                          <h3 class="text-lg font-bold">
+                            {{ transportation.name }}
+                          </h3>
+                          <p>
+                            <strong>Address:</strong>
+                            {{ transportation.address }}
+                          </p>
+                          <p>
+                            <strong>Category:</strong>
+                            {{ transportation.category }}
+                          </p>
+                          <p>
+                            <strong>Distance:</strong>
+                            {{ transportation.distance }} km
+                          </p>
+                        </div>
+                      </div>
+                      <p v-else class="text-gray-500">
+                        No transportation recommendations available.
+                      </p>
+
+                      <!-- Pagination Controls -->
+                      <div
+                        v-if="ptotalTransportationPages > 1"
+                        class="flex justify-center items-center space-x-4 mt-4"
+                      >
+                        <button
+                          @click="pchangeTransportationPage(false)"
+                          :disabled="transportationPage === 1"
+                          class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded disabled:opacity-50"
+                        >
+                          Previous
+                        </button>
+                        <span class="text-gray-700"
+                          >Page {{ ptransportationPage }}</span
+                        >
+                        <button
+                          @click="pchangeTransportationPage(true)"
+                          :disabled="
+                            transportationPage === totalTransportationPages
+                          "
+                          class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded disabled:opacity-50"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="flex justify-center items-center space-x-2 mt-4">
+              <button
+                @click="changePage('popular', false)"
+                :disabled="popularPage === 1"
+                class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span class="page-indicator text-gray-700"
+                >Page {{ popularPage }}</span
+              >
+              <button
+                @click="changePage('popular', true)"
+                :disabled="popularPage === totalPopularPages"
+                class="bg-rose-400 hover:bg-rose-500 text-white py-2 px-4 rounded"
+              >
+                Next
+              </button>
+            </div>
+          </section>
+
           <button
-            @click="generateRecommendations"
-            class="mt-5 px-4 py-2 bg-blue-500 text-white rounded"
+            @click="fetchRecommendations"
+            class="mt-5 px-4 py-2 bg-rose-400 hover:bg-rose-500 text-white rounded"
           >
             Generate Recommendations
           </button>
@@ -151,6 +551,49 @@ export default {
   },
   data() {
     return {
+      selectedLocation: null,
+      locations: [
+        { name: "Downtown Montreal", lat: 45.5017, lon: -73.5673 },
+        { name: "Old Montreal", lat: 45.5074, lon: -73.5541 },
+        { name: "Plateau Mont-Royal", lat: 45.5234, lon: -73.5795 },
+        { name: "Mile End", lat: 45.5245, lon: -73.6048 },
+        { name: "Griffintown", lat: 45.4914, lon: -73.5581 },
+        { name: "West Island", lat: 45.4713, lon: -73.8689 },
+        { name: "Hochelaga-Maisonneuve", lat: 45.5581, lon: -73.551 },
+        { name: "Little Italy", lat: 45.5369, lon: -73.6146 },
+        { name: "Chinatown", lat: 45.5088, lon: -73.56 },
+        { name: "Verdun", lat: 45.4612, lon: -73.5673 },
+        { name: "Outremont", lat: 45.5158, lon: -73.6078 },
+        { name: "Côte-des-Neiges", lat: 45.496, lon: -73.6179 },
+        { name: "Rosemont–La Petite-Patrie", lat: 45.5441, lon: -73.5938 },
+        { name: "Lachine", lat: 45.4319, lon: -73.6759 },
+        { name: "LaSalle", lat: 45.43, lon: -73.649 },
+        { name: "Villeray", lat: 45.5442, lon: -73.6165 },
+        { name: "Saint-Henri", lat: 45.4745, lon: -73.579 },
+        { name: "Notre-Dame-de-Grâce", lat: 45.4734, lon: -73.616 },
+        { name: "Ville-Marie", lat: 45.5091, lon: -73.5528 },
+        { name: "Pointe-Claire", lat: 45.4487, lon: -73.8166 },
+      ],
+      location: null,
+      weather: null,
+      time: null,
+      personalizedPage: 1,
+      popularPage: 1,
+      visitedPage: 1,
+      itemsPerPage: 4,
+      selectedPlace: null, // Holds the place the user is rating
+      currentRating: 0, // Tracks the current star rating
+      selectedItem: null,
+      transportationPage: 1, // Current page of transportation
+      transportationsPerPage: 4, // Items per page for transportation modal
+      pselectedItem: null,
+      ptransportationPage: 1, // Current page of transportation
+      ptransportationsPerPage: 4, // Items per page for transportation modal
+      transportation: [],
+      isModalOpenPer: false,
+      pisModalOpenPer: false,
+      personalizedRecommendations: [],
+      popularRecommendations: [],
       preferences: {
         cuisines: [],
         indoor_activities: [],
@@ -160,7 +603,183 @@ export default {
       },
     };
   },
+  mounted() {
+    this.fetchUserPreferences();
+  },
+  computed: {
+    paginatedTransportations() {
+      if (!this.selectedItem || !this.selectedItem.transportation) return [];
+      const start = (this.transportationPage - 1) * this.transportationsPerPage;
+      const end = start + this.transportationsPerPage;
+      return this.selectedItem.transportation.slice(start, end);
+    },
+    totalTransportationPages() {
+      if (!this.selectedItem || !this.selectedItem.transportation) return 0;
+      return Math.ceil(
+        this.selectedItem.transportation.length / this.transportationsPerPage
+      );
+    },
+    ppaginatedTransportations() {
+      if (!this.pselectedItem || !this.pselectedItem.transportation) return [];
+      const start =
+        (this.ptransportationPage - 1) * this.ptransportationsPerPage;
+      const end = start + this.ptransportationsPerPage;
+      return this.pselectedItem.transportation.slice(start, end);
+    },
+    ptotalTransportationPages() {
+      if (!this.pselectedItem || !this.pselectedItem.transportation) return 0;
+      return Math.ceil(
+        this.pselectedItem.transportation.length / this.ptransportationsPerPage
+      );
+    },
+    paginatedPersonalizedRecommendations() {
+      const start = (this.personalizedPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.personalizedRecommendations.slice(start, end);
+    },
+
+    paginatedPopularRecommendations() {
+      const start = (this.popularPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.popularRecommendations.slice(start, end);
+    },
+    totalPersonalizedPages() {
+      return Math.ceil(
+        this.personalizedRecommendations.length / this.itemsPerPage
+      );
+    },
+    totalPopularPages() {
+      return Math.ceil(this.popularRecommendations.length / this.itemsPerPage);
+    },
+  },
   methods: {
+    //----------------------------------------------------------------------
+    openTransportationModal(item) {
+      this.selectedItem = item; // Set the selected item
+      this.transportationPage = 1; // Reset pagination
+    },
+
+    //----------------------------------------------------------------------
+    popenTransportationModal(item) {
+      this.pselectedItem = item; // Set the selected item
+      this.ptransportationPage = 1; // Reset pagination
+    },
+
+    //---------------------------------------------------------------------
+    closeTransportationModal() {
+      this.selectedItem = null; // Clear the selected item
+    },
+
+    //----------------------------------------------------------------------
+    pcloseTransportationModal() {
+      this.pselectedItem = null; // Clear the selected item
+    },
+
+    //----------------------------------------------------------------------
+    changeTransportationPage(forward) {
+      if (forward && this.transportationPage < this.totalTransportationPages) {
+        this.transportationPage++;
+      } else if (!forward && this.transportationPage > 1) {
+        this.transportationPage--;
+      }
+    },
+
+    //----------------------------------------------------------------------------
+    pchangeTransportationPage(forward) {
+      if (
+        forward &&
+        this.ptransportationPage < this.ptotalTransportationPages
+      ) {
+        this.ptransportationPage++;
+      } else if (!forward && this.ptransportationPage > 1) {
+        this.ptransportationPage--;
+      }
+    },
+    //-----------------------------------------------------------------------------
+    formatTimeTo12Hour(time) {
+      // Ensure the time is in "HH:mm" format
+      const [hour, minute] = time.split(":").map(Number);
+      const period = hour >= 12 ? "PM" : "AM";
+      const formattedHour = hour % 12 || 12; // Convert 0 or 12 to 12-hour format
+      return `${formattedHour}:${minute.toString().padStart(2, "0")} ${period}`;
+    },
+
+    //--------------------------------------------------------------------------
+    updateLocationCoordinates() {
+      if (this.selectedLocation) {
+        this.location = [this.selectedLocation.lat, this.selectedLocation.lon]; // Update location as an array [lat, lon]
+      }
+    },
+    async fetchRecommendations() {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.warn("JWT not found in localStorage.");
+        return;
+      }
+
+      if (!this.location.length || !this.time || !this.weather) {
+        console.warn("Please ensure all fields are filled.");
+        return;
+      }
+
+      try {
+        // Prepare payload to match API requirements
+        const payload = {
+          location: this.location, // Array format [latitude, longitude]
+          time: this.formatTimeTo12Hour(this.time), // Convert time to 12-hour format
+          weather: this.weather, // String format, e.g., "sunny"
+        };
+        console.log(payload);
+        // Make the POST request to fetch recommendations
+        const response = await axios.post(
+          "http://localhost:5000/recommendation/get_recommendations",
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log("Recommendations Response:", response.data);
+
+        // Handle the response data as needed
+        this.personalizedRecommendations =
+          response.data.personalized_recommendations || [];
+        this.popularRecommendations =
+          response.data.popular_recommendations || [];
+      } catch (error) {
+        console.error("Error fetching recommendations:", error);
+      }
+    },
+
+    //-------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------------------------------//
+    changePage(type, direction) {
+      if (type === "personalized") {
+        if (direction && this.personalizedPage < this.totalPersonalizedPages) {
+          this.personalizedPage++;
+        } else if (!direction && this.personalizedPage > 1) {
+          this.personalizedPage--;
+        }
+      } else if (type === "popular") {
+        if (direction && this.popularPage < this.totalPopularPages) {
+          this.popularPage++;
+        } else if (!direction && this.popularPage > 1) {
+          this.popularPage--;
+        }
+      } else if (type === "visitedPlaces") {
+        if (direction && this.visitedPage < this.totalVisitedPages) {
+          this.visitedPage++;
+        } else if (!direction && this.visitedPage > 1) {
+          this.visitedPage--;
+        }
+      }
+    },
+
+    //-----------------------------------------------------------------------------------
     async fetchUserPreferences() {
       const token = localStorage.getItem("token");
 
@@ -196,9 +815,6 @@ export default {
         console.error("Error fetching user preferences:", error);
       }
     },
-  },
-  mounted() {
-    this.fetchUserPreferences();
   },
 };
 </script>
