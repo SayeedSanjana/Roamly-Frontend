@@ -39,7 +39,7 @@
               <div class="mt-2 text-base">
                 <div class="mb-2 font-bold">Preferred Meal Time:</div>
                 <br />
-                <div v-if="preferences.cuisines && preferences.cuisines.length">
+                <div v-if="preferences.preferred_meal_time.length > 0">
                   <div
                     v-for="v in preferences.preferred_meal_time"
                     :key="v"
@@ -94,9 +94,8 @@
               </p>
             </div>
           </div>
-
           <!-- Google Maps Widget -->
-          <div
+          <!-- <div
             class="bg-white shadow-lg rounded-xl flex-grow h-72 flex flex-col justify-between items-center border border-gray-200"
           >
             <div
@@ -109,6 +108,25 @@
                 }}</span>
               </p>
             </div>
+            <div id="map" class="flex-grow w-full h-full rounded-b-xl"></div>
+          </div> -->
+          <!-- Google Maps Widget -->
+          <div
+            class="bg-white shadow-lg rounded-xl flex-grow h-72 flex flex-col justify-between items-center border border-gray-200"
+          >
+            <div
+              class="w-full py-2 px-4 border-b border-orange-200 rounded-t-xl"
+            >
+              <p class="text-xl font-semibold">
+                Location:
+                <span
+                  id="address"
+                  class="text-sm text-green-600 font-semibold"
+                  >{{ this.address }}</span
+                >
+              </p>
+            </div>
+            <!-- Map container -->
             <div id="map" class="flex-grow w-full h-full rounded-b-xl"></div>
           </div>
         </div>
@@ -247,6 +265,7 @@
                 </div>
                 <div class="mt-2 flex space-x-2">
                   <button
+                    @click="dropBy(item)"
                     id="drop-by-btn"
                     class="text-orange-500 lg:hover:text-orange-600 text-sm font-semibold px-4 rounded w-full flex"
                     data-id="${item._id}"
@@ -383,7 +402,6 @@
                   >
                 </div>
                 <div
-                  v-if="(item.type = 'restaurant')"
                   class="nline-block bg-pink-100 text-pink-800 text-sm font-medium px-3 py-1 rounded-full m-1"
                 >
                   {{ item.cuisine_type }}
@@ -417,6 +435,7 @@
               </div>
               <div class="mt-2 flex space-x-2">
                 <button
+                  @click="dropByPlace(item)"
                   id="drop-by-btn"
                   class="text-orange-500 lg:hover:text-orange-600 text-sm font-semibold px-4 rounded w-full flex"
                   data-id="${item._id}"
@@ -554,7 +573,6 @@
                   >
                 </div>
                 <div
-                  v-if="(item.type = 'restaurant')"
                   class="nline-block bg-pink-100 text-pink-800 text-sm font-medium px-3 py-1 rounded-full m-1"
                 >
                   {{ item.cuisine_type }}
@@ -589,6 +607,7 @@
               </div>
               <div class="mt-2 flex space-x-2">
                 <button
+                  @click="dropByPlace(item)"
                   id="drop-by-btn"
                   class="text-orange-500 lg:hover:text-orange-600 text-sm font-semibold px-4 rounded w-full flex"
                   data-id="${item._id}"
@@ -721,6 +740,9 @@
 import Header from "../components/Header.vue";
 import Navigation from "../components/Navigation.vue";
 import axios from "axios";
+import Swal from "sweetalert2";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 export default {
   components: {
@@ -937,6 +959,179 @@ export default {
     },
   },
   methods: {
+    async showPlaceOnMap(address, name) {
+      this.address = address;
+      console.log(this.address);
+      try {
+        // Fetch coordinates from Nominatim API
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            address
+          )}`
+        );
+        const data = await response.json();
+
+        if (data.length > 0) {
+          const { lat, lon } = data[0];
+          const latitude = parseFloat(lat);
+          const longitude = parseFloat(lon);
+
+          // Center the map on the location and add a marker
+          this.map.setView([latitude, longitude], 15); // Zoom level 15
+          L.marker([latitude, longitude])
+            .addTo(this.map)
+            .bindPopup(`<b>${name}</b><br>${address}`)
+            .openPopup();
+        } else {
+          console.error("No results found for the address.");
+        }
+      } catch (error) {
+        console.error("Error fetching coordinates for the address:", error);
+      }
+    },
+
+    async dropBy(place) {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.warn("JWT not found in localStorage.");
+        return;
+      }
+
+      try {
+        // Geocoding: Convert address to lat/lon
+        const geoResponse = await axios.get(
+          `https://api.opencagedata.com/geocode/v1/json`,
+          {
+            params: {
+              q: place.address, // The address to geocode
+              key: "46473a2e56f54a77b64869d8a7225b39",
+            },
+          }
+        );
+
+        const results = geoResponse.data.results;
+        if (results.length === 0) {
+          Swal.fire({
+            title: "Error!",
+            text: "No results found for the provided address.",
+            icon: "error",
+            confirmButtonText: "OK",
+          });
+          return;
+        }
+        const { lat, lng } = results[0].geometry;
+        // Show the location on the map
+        this.showOnMap(lat, lng, place.name);
+      } catch (error) {
+        console.error("Error processing drop-by request:", error);
+      }
+    },
+
+    //--------------------------------------------------------------------
+    async dropByPlace(place) {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.warn("JWT not found in localStorage.");
+        return;
+      }
+
+      try {
+        // Geocoding: Convert address to lat/lon
+        const geoResponse = await axios.get(
+          `https://api.opencagedata.com/geocode/v1/json`,
+          {
+            params: {
+              q: place.address, // The address to geocode
+              key: "46473a2e56f54a77b64869d8a7225b39",
+            },
+          }
+        );
+
+        const results = geoResponse.data.results;
+        if (results.length === 0) {
+          Swal.fire({
+            title: "Error!",
+            text: "No results found for the provided address.",
+            icon: "error",
+            confirmButtonText: "OK",
+          });
+          return;
+        }
+
+        const { lat, lng } = results[0].geometry;
+
+        // Add the place to visited_places
+        const payload = {
+          visited_places: [
+            {
+              name: place.name,
+              address: place.address,
+              category: place.category,
+            },
+          ],
+        };
+
+        const response = await axios.post(
+          "http://127.0.0.1:5000/user/add_visited_places",
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log("Visited place added successfully:", response.data);
+
+        // Update local visited places list
+        this.preferences.visited_places.push(payload.visited_places[0]);
+        this.fetchUserPreferences();
+
+        // SweetAlert success notification
+        Swal.fire({
+          title: "Success!",
+          text: `${place.name} has been added to your visited places.`,
+          icon: "success",
+          confirmButtonText: "OK",
+          timer: 3000,
+          timerProgressBar: true,
+        });
+
+        // Show the location on the map
+        this.showOnMap(lat, lng, place.name);
+      } catch (error) {
+        console.error("Error processing drop-by request:", error);
+
+        // SweetAlert error notification
+        Swal.fire({
+          title: "Error!",
+          text: "Failed to process the drop-by request. Please try again.",
+          icon: "error",
+          confirmButtonText: "OK",
+        });
+      }
+    },
+
+    showOnMap(lat, lng, name) {
+      this.address = name + " " + lat + " " + lng + " ";
+      if (!this.map) {
+        console.error("Map not initialized.");
+        return;
+      }
+
+      // Set the map view to the specified location
+      this.map.setView([lat, lng], 14);
+
+      // Add a marker at the location
+      L.marker([lat, lng])
+        .addTo(this.map)
+        .bindPopup(`<strong>${name}</strong><br>${lat}, ${lng}`)
+        .openPopup();
+    },
+
     //----------------------------------------------------------------------
     openTransportationModal(item) {
       this.selectedItem = item; // Set the selected item
@@ -1077,7 +1272,7 @@ export default {
           }
         );
 
-        // console.log("User Preferences Response:", response.data);
+        console.log("User Preferences Response:", response.data);
 
         // Update preferences and user details
         const data = response.data;
@@ -1298,11 +1493,25 @@ export default {
     this.currentTime();
     this.updateClock();
     setInterval(this.updateClock, 1000);
+    // Ensure Leaflet is loaded
+    if (typeof L === "undefined") {
+      console.error("Leaflet library not loaded.");
+      return;
+    }
+
+    // Initialize map
+    this.map = L.map("map").setView([45.5017, -73.5673], 13); // Default to Montreal
+
+    // Add OpenStreetMap tiles
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors",
+    }).addTo(this.map);
 
     // Step 1: Fetch location, then weather, then recommendations
     this.getUserLocation()
       .then((location) => {
         console.log("Location fetched:", location);
+        this.address = "Lat: " + location.lat + " Lon: " + location.lon;
         return this.fetchWeather(); // Step 2: Fetch weather after location
       })
       .then(() => {
@@ -1315,7 +1524,7 @@ export default {
       .finally(() => {
         this.loading = false; // Hide loading indicator after all tasks
       });
-    this.initMap();
+    //this.initMap();
     this.userName = this.getUsernameFromJWT();
   },
 };

@@ -28,12 +28,12 @@
 
 <script>
 import Swal from "sweetalert2";
+import { socket, joinSocketRoom } from "../services/socket.js";
 
 export default {
   name: "Header",
   methods: {
-    handleSignOut() {
-      // Display confirmation dialog using SweetAlert2
+    async handleSignOut() {
       Swal.fire({
         title: "Are you sure you want to sign out?",
         icon: "warning",
@@ -42,8 +42,29 @@ export default {
         cancelButtonColor: "#4caf50",
         confirmButtonText: "Yes, Sign Out",
         cancelButtonText: "Cancel",
-      }).then((result) => {
+      }).then(async (result) => {
         if (result.isConfirmed) {
+          // Retrieve the token before clearing it
+          const token = localStorage.getItem("token");
+
+          if (token) {
+            try {
+              // Dynamically import jwt-decode
+              const { default: jwtDecode } = await import("jwt-decode");
+              const decoded = jwtDecode(token); // Decode the token
+              const userId = decoded.userId || decoded.sub; // Adjust based on your token structure
+
+              // Leave the room for this user
+              if (userId) {
+                socket.emit("leave_room", { userId }, (response) => {
+                  console.log("Left room successfully:", response);
+                });
+              }
+            } catch (error) {
+              console.error("Error decoding token or leaving room:", error);
+            }
+          }
+
           // Clear the session (remove token)
           localStorage.removeItem("token");
 

@@ -21,7 +21,7 @@
               >
               <select
                 id="location"
-                class="mt-1 p-2 w-full border rounded"
+                class="mt-1 p-2 w-full border rounded appearance-none bg-white"
                 v-model="selectedLocation"
                 @change="updateLocationCoordinates"
               >
@@ -57,7 +57,7 @@
               >
               <select
                 id="weather"
-                class="mt-1 p-2 w-full border rounded"
+                class="mt-1 p-2 w-full border rounded appearance-none bg-white"
                 v-model="weather"
               >
                 <option value="clear">Clear</option>
@@ -70,6 +70,24 @@
             </div>
           </div>
         </section>
+
+        <!-- Alerts Section -->
+        <!-- <section class="container mx-auto py-4 mb-8">
+          <div id="alerts" class="bg-white p-4 rounded-lg shadow">
+            <h2 class="text-xl font-semibold">Alerts & Notifications</h2>
+            <div
+              v-if="showNotification"
+              class="fixed top-0 left-0 w-full bg-green-500 text-white text-center p-4"
+            >
+              {{ notificationMessage }}
+            </div>
+            <div v-else id="notifications" class="text-gray-500 mt-2">
+              <p>No alerts at the moment.</p>
+            </div>
+          </div>
+        </section> -->
+
+        <!-- Alerts Section -->
 
         <!-- Preferred Meal Times -->
         <section class="mb-10">
@@ -153,7 +171,47 @@
             </div>
           </div>
         </section>
+        <!-- Alerts Section -->
+        <section class="container mx-auto py-4 mb-8">
+          <div
+            id="alerts"
+            class="bg-white p-4 rounded-lg shadow relative flex items-center"
+          >
+            <!-- SVG Notification Indicator -->
+            <div
+              v-if="showNotification"
+              class="absolute top-2 left-2 h-12 w-12 flex items-center justify-center"
+            >
+              <img
+                src="../../public/icons/notifications.gif"
+                class="w-12 h-12"
+                alt="Notification Icon"
+              />
+            </div>
 
+            <!-- Title and Content -->
+            <div
+              :class="{ 'ml-12 bg-pink-50 p-4 w-fullS': showNotification }"
+              class="transition-all duration-300"
+            >
+              <h2
+                :class="{
+                  'text-red-500 ': showNotification,
+                  'text-gray-800': !showNotification,
+                }"
+                class="text-xl font-semibold"
+              >
+                Alerts & Notifications
+              </h2>
+              <div v-if="showNotification" class="text-gray-800 mt-2">
+                <p>{{ notificationMessage }}</p>
+              </div>
+              <div v-else class="text-gray-500 mt-2">
+                <p>No alerts at the moment.</p>
+              </div>
+            </div>
+          </div>
+        </section>
         <!-- Results Section -->
         <section>
           <section
@@ -165,7 +223,7 @@
               class="text-base text-gray-400"
               v-if="paginatedPersonalizedRecommendations <= 0"
             >
-              No personalized recommendation yet!
+              No personalized recommendation yet.
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div
@@ -181,7 +239,6 @@
                     >
                   </div>
                   <div
-                    v-if="(item.type = 'restaurant')"
                     class="nline-block bg-pink-100 text-pink-800 text-sm font-medium px-3 py-1 rounded-full m-1"
                   >
                     {{ item.cuisine_type }}
@@ -346,9 +403,9 @@
             <h2 class="text-xl font-semibold">Popular Recommendations</h2>
             <p
               class="text-base text-gray-400"
-              v-if="paginatedPersonalizedRecommendations <= 0"
+              v-if="paginatedPopularRecommendations <= 0"
             >
-              No popular recommendation yet!
+              No personalized recommendation yet.
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div
@@ -365,7 +422,6 @@
                     >
                   </div>
                   <div
-                    v-if="(item.type = 'restaurant')"
                     class="nline-block bg-pink-100 text-pink-800 text-sm font-medium px-3 py-1 rounded-full m-1"
                   >
                     {{ item.cuisine_type }}
@@ -542,6 +598,7 @@
 import Header from "../components/Header.vue";
 import Navigation from "../components/Navigation.vue";
 import axios from "axios";
+import { socket, joinSocketRoom } from "../services/socket.js";
 
 export default {
   name: "Test",
@@ -551,17 +608,72 @@ export default {
   },
   data() {
     return {
+      notificationMessage: "", // Store the notification message
+      showNotification: false, // Control the visibility of the notification
       selectedLocation: null,
+
       locations: [
         { name: "Downtown Montreal", lat: 45.5017, lon: -73.5673 },
-        { name: "Old Montreal", lat: 45.5074, lon: -73.5541 },
-        { name: "Plateau Mont-Royal", lat: 45.5234, lon: -73.5795 },
-        { name: "Mile End", lat: 45.5245, lon: -73.6048 },
-        { name: "Griffintown", lat: 45.4914, lon: -73.5581 },
-        { name: "West Island", lat: 45.4713, lon: -73.8689 },
-        { name: "Hochelaga-Maisonneuve", lat: 45.5581, lon: -73.551 },
-        { name: "Little Italy", lat: 45.5369, lon: -73.6146 },
-        { name: "Chinatown", lat: 45.5088, lon: -73.56 },
+        // { name: "Old Montreal", lat: 45.5074, lon: -73.5541 },
+        // { name: "Plateau Mont-Royal", lat: 45.5234, lon: -73.5795 },
+        // { name: "Mile End", lat: 45.5245, lon: -73.6048 },
+        // { name: "Griffintown", lat: 45.4914, lon: -73.5581 },
+        // { name: "West Island", lat: 45.4713, lon: -73.8689 },
+        // { name: "Hochelaga-Maisonneuve", lat: 45.5581, lon: -73.551 },
+        // { name: "Little Italy", lat: 45.5369, lon: -73.6146 },
+        // { name: "Chinatown", lat: 45.5088, lon: -73.56 },
+        { name: "Quartier Latin", lat: 45.51458, lon: -73.57165 },
+        {
+          name: "Plateau-Mont-Royal (La Petite Marche)",
+          lat: 45.526767,
+          lon: -73.588768,
+        },
+        {
+          name: "Shaughnessy Village (Near Barbie Expo)",
+          lat: 45.500802,
+          lon: -73.574279,
+        },
+        {
+          name: "Plateau-Mont-Royal (Au Pied de Cochon)",
+          lat: 45.522169,
+          lon: -73.57445,
+        },
+        {
+          name: "Quartier Latin (Near Book Nook Library)",
+          lat: 45.509,
+          lon: -73.5619,
+        },
+        {
+          name: "Plateau-Mont-Royal (La Bella Vita)",
+          lat: 45.5036,
+          lon: -73.5587,
+        },
+        {
+          name: "Milton-Parc (Mount Royal Hiking Trails)",
+          lat: 45.5045,
+          lon: -73.5872,
+        },
+        {
+          name: "Parc-Extension",
+          lat: 45.53701,
+          lon: -73.60569,
+        },
+        {
+          name: "Plateau-Mont-Royal",
+          lat: 45.526678,
+          lon: -73.580239,
+        },
+        {
+          name: "Plateau-Mont-Royal ",
+          lat: 45.5184,
+          lon: -73.573,
+        },
+        {
+          name: "Golden Square Mile ",
+          lat: 45.498535,
+          lon: -73.579402,
+        },
+        { name: "Plateau-Mont-Royal ", lat: 45.522169, lon: -73.57445 },
         { name: "Verdun", lat: 45.4612, lon: -73.5673 },
         { name: "Outremont", lat: 45.5158, lon: -73.6078 },
         { name: "Côte-des-Neiges", lat: 45.496, lon: -73.6179 },
@@ -605,6 +717,19 @@ export default {
   },
   mounted() {
     this.fetchUserPreferences();
+    socket.on("notification", (data) => {
+      console.log("Received notification:", data.message);
+      this.handleNotification(data.message); // Check if this function is invoked
+    });
+    // Add event listener to hide notification on page click
+    document.addEventListener("click", this.dismissNotification);
+  },
+  destroyed() {
+    socket.off("notification"); // Clean up listener on component destroy
+  },
+  beforeUnmount() {
+    // Clean up the event listener
+    document.removeEventListener("click", this.dismissNotification);
   },
   computed: {
     paginatedTransportations() {
@@ -653,6 +778,13 @@ export default {
     },
   },
   methods: {
+    dismissNotification() {
+      // Hide the notification after 3 seconds
+      setTimeout(() => {
+        this.showNotification = false;
+      }, 40000);
+    },
+
     //----------------------------------------------------------------------
     openTransportationModal(item) {
       this.selectedItem = item; // Set the selected item
@@ -710,6 +842,19 @@ export default {
         this.location = [this.selectedLocation.lat, this.selectedLocation.lon]; // Update location as an array [lat, lon]
       }
     },
+
+    //-------------------------------------------------------------------------
+    handleNotification(message) {
+      console.log("Handling notification:", message); // Debug log
+      this.notificationMessage = message;
+      this.showNotification = true;
+
+      // Auto-hide the notification after 1 minute
+      setTimeout(() => {
+        this.showNotification = false;
+      }, 40000); // 60 seconds
+    },
+    //------------------------------------------------------------------------------
     async fetchRecommendations() {
       const token = localStorage.getItem("token");
 
@@ -744,18 +889,26 @@ export default {
         );
 
         console.log("Recommendations Response:", response.data);
+        // socket.on("notification", (data) => {
+        //   console.log("Received notification:", data.message);
+        //   this.handleNotification(data.message);
+        // });
 
         // Handle the response data as needed
         this.personalizedRecommendations =
           response.data.personalized_recommendations || [];
+
+        console.log(
+          "Personalized recommendation: " + this.personalizedRecommendations
+        );
         this.popularRecommendations =
           response.data.popular_recommendations || [];
+        console.log("Popular recommendation: " + this.popularRecommendations);
       } catch (error) {
         console.error("Error fetching recommendations:", error);
       }
     },
 
-    //-------------------------------------------------------------------
     //----------------------------------------------------------------------------------------------------------------------//
     changePage(type, direction) {
       if (type === "personalized") {
@@ -801,6 +954,7 @@ export default {
         );
 
         // console.log("User Preferences Response:", response.data);
+        //-------------------------------------------------------------------------------------
 
         // Update preferences and user details
         const data = response.data;

@@ -75,6 +75,7 @@
 <script>
 import axios from "axios";
 import Swal from "sweetalert2";
+import { socket, joinSocketRoom } from "../services/socket.js";
 
 export default {
   name: "Login",
@@ -98,6 +99,7 @@ export default {
         // Handle success response
         const token = response.data.access_token;
         localStorage.setItem("token", token);
+        joinSocketRoom(); // Join the room with the new token
 
         // Set inline success message
         this.message = response.data.message || "Login successful!";
