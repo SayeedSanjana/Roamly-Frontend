@@ -37,7 +37,9 @@ npm run build
 ![image](https://github.com/user-attachments/assets/3cc0866f-aa2e-4ede-aabd-b3cc38974f27)
 ![image](https://github.com/user-attachments/assets/153c2330-7085-4a86-973f-5554d9709d65)
 ![image](https://github.com/user-attachments/assets/d17d39a4-250e-4333-8b61-7b9d625a7abb)
-![image](https://github.com/user-attachments/assets/269f126b-eca9-49ab-b28b-44390d6a0b9e)
+![image](https://github.com/user-attachments/assets/f5216446-5a5e-4808-9d15-313ae1999592)
+![image](https://github.com/user-attachments/assets/3d34c926-549c-4dee-b9bf-ce0d01f24f3d)
+
 
 
 
