@@ -27,19 +27,3 @@ npm run dev
 ```sh
 npm run build
 ```
-
-## WebApp Images
-
-![Project Image](./images/images1.png)
-![Project Image](./images/images2.png)
-![Project Image](./images/images3.png)
-![Project Image](./images/images4.png)
-![Project Image](./images/images5.png)
-![Project Image](./images/images6.png)
-![Project Image](./images/images7.png)
-![Project Image](./images/images7.1.png)
-![Project Image](./images/images8.png)
-![Project Image](./images/images9.png)
-![Project Image](./images/images10.png)
-![Project Image](./images/images11.png)
-![Project Image](./images/images12.png)
